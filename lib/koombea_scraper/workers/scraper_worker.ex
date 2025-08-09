@@ -1,0 +1,46 @@
+defmodule KoombeaScraper.Workers.ScraperWorker do
+  @moduledoc """
+  An Oban worker responsible for scraping a stored page's content and updating
+  it in the database with the results.
+
+  If the page cannot be found, the worker simply returns `:ok` and does nothing.
+
+  If scraping fails, the error tuple is returned so Oban can handle retries
+  according to its configured retry policy.
+
+  ## Arguments
+
+  The job `args` must be a map with:
+
+    * `"page_id"` - The integer ID of the page to scrape.
+
+  ## Examples
+
+      # Enqueue the worker
+      %{"page_id" => 123}
+      |> KoombeaScraper.Workers.ScraperWorker.new()
+      |> Oban.insert()
+
+  This will run `perform/1` asynchronously to scrape the page and store its links.
+  """
+  use Oban.Worker, queue: :scraper
+
+  alias KoombeaScraper.Scraper
+  alias KoombeaScraper.WebContent
+  alias KoombeaScraper.WebContent.Page
+
+  @impl Oban.Worker
+  def perform(%Oban.Job{args: %{"page_id" => page_id} = _args}) do
+    with page = %Page{} <- WebContent.get_page(page_id, preload: :links),
+         {:ok, scrape_results} <- Scraper.scrape(page.url) do
+      attrs = Map.put(scrape_results, :status, :done)
+      WebContent.update_page(page, attrs)
+    else
+      nil ->
+        :ok
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+end
