@@ -6,7 +6,7 @@ Scraping is performed in the background using Oban jobs, and results are updated
 
 ## Software used for development
 
-I used asdf to install Elixir and Erlang versions. If you are using asdf you just need to run `asdf install` to install the required versions.
+I used `asdf` to install Elixir and Erlang versions. If you are using asdf you just need to run `asdf install` to install the required versions.
 
   * Elixir 1.18.4
   * Erlang 28.0.2
@@ -15,9 +15,22 @@ You don't need to install Phoenix explicitly, but if you want to install you can
 
   * Phoenix 1.7.21
 
-Postgres is needed to use the application.
+Postgres is needed to use the application. If you need to change the configuration like user and password to connect to your instance you can edit `config/dev.exs`, save and restart your server with `CTRL + c` `CTRL + c` and start your server again with `mix phx.server`
+
+
+```
+config :koombea_scraper, KoombeaScraper.Repo,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "koombea_scraper_dev",
+  stacktrace: true,
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
+```
 
   * Postgres 17
+  
 
 ## Installation
 

@@ -12,7 +12,7 @@ defmodule KoombeaScraperWeb.LinkLive do
 
     case WebContent.get_user_page(socket.assigns.current_user, id) do
       nil ->
-        {:ok,
+        {:noreply,
          socket
          |> put_flash(:error, "Page not found.")
          |> redirect(to: ~p"/pages")}
