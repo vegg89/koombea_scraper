@@ -57,8 +57,35 @@ You will need to [`create an account`](http://localhost:4000/users/register) in 
 
     Used for building user interfaces without writing JavaScript. In this app, LiveView updates the UI when new pages are scraped or pagination changes.
 
+  * ### PubSub
+
+    Used to broadcast messages to process subscribed to topics. In this app was used to notify user when scraping process finished so the UI can
+    update the data.
+
   * ### Mock
 
     A library used for mocking calls to third party or external apps for Elixir projects. In this app was used to mock http requests to page urls
     and allow us to create tests for Scraper module.
+
+## Main modules
+
+  * ### KoombeaScraper.Scraper
+
+    Responsible for fetching and parsing HTML content from a web page. Extracts the `title` and all `<a>` tag links.
+
+  * ### KoombeaScraper.WebContent
+
+    Context module responsible to handle `Page` and `Link` schemas.
+
+  * ### KoombeaScraper.Workers.ScraperWorker
+
+    Oban worker responsable to execute scraping process and notify user when its done through PubSub.
+
+  * ### KoombeaScraperWeb.PageLive
+
+    LiveView page to add and show user `Page`
+
+  * ### KoombeaScraperWeb.LinkLive
+
+    LiveView page to show links scraped by the `ScraperWorker`
 

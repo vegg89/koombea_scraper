@@ -75,8 +75,6 @@ defmodule KoombeaScraperWeb.PageLive do
     """
   end
 
-  # Events
-
   @impl true
   def handle_event("save", %{"page" => page_params}, socket) do
     case WebContent.create_user_page(socket.assigns.current_user, page_params) do
@@ -91,19 +89,31 @@ defmodule KoombeaScraperWeb.PageLive do
     end
   end
 
-  # Notifications
+  @impl true
+  def handle_info({:page_processed_success, _updated_page}, socket) do
+    pages =
+      WebContent.paginate_user_pages(socket.assigns.current_user,
+        preload: :links,
+        page: socket.assigns.page_number
+      )
 
-  # @impl true
-  # def handle_info({:page_processed_success, page}, socket) do
-  #   pages = socket.assigns.stream.pages
+    {:noreply,
+     socket
+     |> put_flash(:info, "Scraping complete!")
+     |> assign(:pages, pages)}
+  end
 
-  #   {:noreply,
-  #    socket
-  #    |> put_flash(:info, "Scraping complete!")
-  #    |> push_patch(to: ~p"/pages/#{page_id}")}
-  # end
+  @impl true
+  def handle_info({:page_processed_fail, updated_page, reason}, socket) do
+    pages =
+      WebContent.paginate_user_pages(socket.assigns.current_user,
+        preload: :links,
+        page: socket.assigns.page_number
+      )
 
-  # def handle_info({:page_processed_error, page, reason}, socket) do
-  #   {:noreply, put_flash(socket, :error, "Scraping failed for page: #{page.url} #{inspect(reason)}")}
-  # end
+    {:noreply,
+     socket
+     |> put_flash(:error, "Scraping failed for page: #{updated_page.url} #{inspect(reason)}")
+     |> assign(:pages, pages)}
+  end
 end

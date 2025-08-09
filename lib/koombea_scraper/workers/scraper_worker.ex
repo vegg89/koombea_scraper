@@ -28,18 +28,35 @@ defmodule KoombeaScraper.Workers.ScraperWorker do
   alias KoombeaScraper.Scraper
   alias KoombeaScraper.WebContent
   alias KoombeaScraper.WebContent.Page
+  alias Phoenix.PubSub
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"page_id" => page_id} = _args}) do
-    with page = %Page{} <- WebContent.get_page(page_id, preload: :links),
-         {:ok, scrape_results} <- Scraper.scrape(page.url) do
-      attrs = Map.put(scrape_results, :status, :done)
-      WebContent.update_page(page, attrs)
+    page = WebContent.get_page(page_id, preload: :links)
+
+    with %Page{} <- page,
+         {:ok, scrape_results} <- Scraper.scrape(page.url),
+         {:ok, page} <- WebContent.update_page(page, Map.put(scrape_results, :status, :done)) do
+      PubSub.broadcast(
+        KoombeaScraper.PubSub,
+        "user_pages:#{page.user_id}",
+        {:page_processed_success, page}
+      )
+
+      :ok
     else
       nil ->
         :ok
 
       {:error, reason} ->
+        {:ok, page} = WebContent.update_page(page, %{status: :failed})
+
+        PubSub.broadcast(
+          KoombeaScraper.PubSub,
+          "user_pages:#{page.user_id}",
+          {:page_processed_fail, page, reason}
+        )
+
         {:error, reason}
     end
   end
